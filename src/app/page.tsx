@@ -1,66 +1,129 @@
 import Image from "next/image";
-import styles from "./page.module.css";
+import ChatbotWidget from "./components/ChatbotWidget";
 
 export default function Home() {
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="homepage">
+      <Image
+        src="/hug.png"
+        alt="PawMatchAI"
+        width={200}
+        height={200}
+        sizes="(max-width: 480px) 72px, (max-width: 768px) 96px, 200px"
+        className="hug-image"
+        style={{
+          position: "fixed",
+          opacity: 0.3,
+          zIndex: "100",
+          bottom: "0%",
+          right: "2%",
+        }}
+      />
+
+      <section className="intro">
+        <div className="title">
+          PawMatchAI
+          <Image
+            src="/favicon.ico"
+            alt="PawMatchAI Logo"
+            width={100}
+            height={100}
+            sizes="(max-width: 480px) 42px, (max-width: 768px) 56px, 100px"
+            className="title-icon"
+            style={{
+              rotate: "20deg",
+            }}
+          />
         </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+
+        <div className="oneliner">Agent-based pet reccommendation platform</div>
+      </section>
+
+      <section>
+        <div className="section-title">Mission Statement</div>
+        <div>
+          <h2>
+            Our mission is to transform the pet adoption experience through an
+            agentic AI-driven recommendation system that intelligently
+            understands user lifestyles, preferences, and needs to provide
+            personalized, explainable, and trustworthy cat breed matches.
+          </h2>
+        </div>
+      </section>
+
+      <section className="features-section">
+        <div className="section-title">Why choose PawMatchAI?</div>
+        <div className="features">
+          <div className="card">
             <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+              src="/home-office.gif"
+              alt="AI-Powered Pet Matching"
+              width={100}
+              height={100}
             />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <h2
+              style={{
+                textAlign: "center",
+              }}
+            >
+              AI-Powered Pet Matching
+            </h2>
+            <p>
+              Get personalized cat breed recommendations based on your
+              lifestyle, preferences, and living environment using our
+              intelligent matching system.
+            </p>
+          </div>
+
+          <div className="card">
+            <Image
+              src="/love.gif"
+              alt="Conversational Adoption Assistant"
+              width={100}
+              height={100}
+            />
+            <h2
+              style={{
+                textAlign: "center",
+              }}
+            >
+              Conversational Adoption Assistant
+            </h2>
+            <p>
+              Interact with our smart chatbot that guides you through the
+              adoption journey, answers questions, and helps refine your ideal
+              pet choice.
+            </p>
+          </div>
+
+          <div className="card">
+            <Image
+              src="/accept.gif"
+              alt="Explainable Recommendations"
+              width={100}
+              height={100}
+            />
+            <h2
+              style={{
+                textAlign: "center",
+              }}
+            >
+              Explainable Recommendations
+            </h2>
+            <p>
+              Every recommendation comes with detailed reasoning, compatibility
+              insights, and breed profiles so you can adopt with confidence.
+            </p>
+          </div>
         </div>
-      </main>
+      </section>
+
+      <section>
+        <div className="section-title">Give PawMatchAI a Try!</div>
+        <div className="chatbox">
+          <ChatbotWidget />
+        </div>
+      </section>
     </div>
   );
 }
