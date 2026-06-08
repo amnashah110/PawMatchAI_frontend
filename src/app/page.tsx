@@ -8,6 +8,7 @@ export default function Home() {
         src="/hug.png"
         alt="PawMatchAI"
         width={200}
+        loading="eager"
         height={200}
         sizes="(max-width: 480px) 72px, (max-width: 768px) 96px, 200px"
         className="hug-image"

@@ -342,7 +342,7 @@ p {
 .chatbox {
   overflow-x: hidden;
   overflow-y: hidden;
-  width: 83.333vw;
+  width: 78vw;
   height: 83.333vh;
   max-width: 100%;
   max-height: 100%;
@@ -692,9 +692,12 @@ p {
   min-width: 4rem;
   border: 1px solid #dcdcdc;
   background: linear-gradient(180deg, #ffffff 0%, #f7f7f7 100%);
-  padding: 0.85rem;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
+  height: 100%;
+  min-height: 320px;
+  box-sizing: border-box;
 }
 
 .breed-score {
@@ -708,6 +711,7 @@ p {
   color: #000;
   font-size: 0.78rem;
   font-weight: 700;
+  align-self: flex-start;
 }
 
 .breed-card h4 {
@@ -718,11 +722,24 @@ p {
   font-weight: 500;
 }
 
-.breed-card p {
+.breed-name {
   margin: 0;
   font-size: 0.82rem;
-  color: #555;
+  color: #333;
   line-height: 1.45;
+  font-weight: 600;
+}
+
+.breed-reason {
+  margin: 0.5rem 0 0 0;
+  font-size: clamp(0.9rem, 1.5vw, 1rem);
+  color: #555555;
+  line-height: 1.45;
+  font-style: italic;
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .status-action-btn {
@@ -961,4 +978,63 @@ p {
 * {
   scrollbar-width: thin;
   scrollbar-color: #f1c6c6 #ffffff;
+}
+
+/* Modal Popup Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+  background: #ffffff;
+  border-radius: 1.25rem;
+  padding: 1.5rem 2rem;
+  width: 90%;
+  max-width: 460px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  position: relative;
+  border: 4px dashed #f1c6c6;
+  animation: slideUp 0.25s ease-out;
+}
+
+.modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #888;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0.25rem;
+  transition: color 0.2s ease;
+}
+
+.modal-close:hover {
+  color: #111;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
