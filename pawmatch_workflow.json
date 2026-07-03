@@ -1,0 +1,771 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Summarize the following pet adoption conversation into a single concise paragraph while preserving all important details relevant to future conversation context.\n\nRefer to speakers only as \"PawMatch\" and \"User\". Only summarize the messages explicitly present in the conversation history; do not infer or invent missing messages or details.\n\nRespond only with the summary.\n\nChat so far: {{ $('UI Set').item.json.chat_history }},\nLatest User Message: {{ $('UI Set').item.json.prompt }},\nLatest PawMatch Message: {{ $json.text || \"\"}} ",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1776,
+        368
+      ],
+      "id": "a47ef2a2-2a39-48e4-b6d7-848dff8edda5",
+      "name": "Chat Summarizer"
+    },
+    {
+      "parameters": {
+        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1776,
+        560
+      ],
+      "id": "5afa796d-b15a-4178-8669-971fdff625cc",
+      "name": "Summary LLM",
+      "credentials": {
+        "groqApi": {
+          "id": "WPraPu7VZWTwK3Ik",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "397866ed-de5c-4534-b939-4431861e0bfe",
+              "name": "prompt",
+              "value": "={{ $json.body.message }}",
+              "type": "string"
+            },
+            {
+              "id": "13c73b5d-15f4-4cd6-93e4-47eab2b948fc",
+              "name": "chat_history",
+              "value": "={{ $json.body.summary }}",
+              "type": "string"
+            },
+            {
+              "id": "48cd1177-4ce9-4727-8fb3-9d3f353b0e50",
+              "name": "traits",
+              "value": "={{ $json.body.traits }}",
+              "type": "object"
+            },
+            {
+              "id": "5311d3ea-20fe-46d6-810f-6ef9da5bfee6",
+              "name": "change",
+              "value": "={{ $json.body.change }}",
+              "type": "string"
+            },
+            {
+              "id": "0300022e-4572-47b7-9f43-9912ca40f4f7",
+              "name": "last_question",
+              "value": "={{ $json.body.last_question }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -32,
+        256
+      ],
+      "id": "3d0b7188-8810-4048-afa4-0df011a7ea79",
+      "name": "UI Set"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "411933cb-3966-4ee5-9509-9a9881c28849",
+              "name": "llm_response",
+              "value": "={{ $('Questioning Agent').item.json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "1258e1a5-a22d-4130-b23f-4399d65a2c3c",
+              "name": "chat_history",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "67f8501a-c7d8-4fae-8a9d-6fab8f98fc1f",
+              "name": "traits",
+              "value": "={{ $('Fill Traits based on Grading Agent').item.json.traits }}",
+              "type": "object"
+            },
+            {
+              "id": "96ab8b4d-fc72-4e7d-9680-e127498aa4f2",
+              "name": "source",
+              "value": "questioning_route",
+              "type": "string"
+            },
+            {
+              "id": "447f0cf0-3a2c-481e-a7e4-38b4b048552d",
+              "name": "change",
+              "value": "={{ $('Set Traits').item.json.change }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2080,
+        368
+      ],
+      "id": "37c6f1a4-d1b4-4c8c-90f5-cda0697c3ac4",
+      "name": "Set After Response"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Instructions:\nYou are a grading agent for user traits regarding cat adoption.\n\nYour role is to extract and update 5 traits based on conversation context:\n\n- activity\n- affection_need\n- maintenance_willingness\n- noise_tolerance\n- time_away\n\nEach trait must be on a scale of:\n- value: 1 to 7 (or -1 if unknown)\n- confidence: 0 to 1\n\nYou must ALWAYS return ALL traits.\n\n---\n\nINPUTS\n\nTraits filled so far:\n{{ JSON.stringify($('UI Set').item.json.traits) }}\n\nChat history:\n{{ $('UI Set').item.json.chat_history }}\n\nLast Interaction:\nPawMatch: {{ $('UI Set').item.json.last_question }},\nUser: {{ $('UI Set').item.json.prompt }}\n\nRubric:\n{{ JSON.stringify($json.rubric) }}\n\nLast change made by you:\n{{ $('UI Set').item.json.change }}\n---\n\nOUTPUT FORMAT (STRICT)\n\nReturn ONLY valid JSON:\n\n{\n  \"traits\": {\n    \"activity\": <number>,\n    \"affection_need\": <number>,\n    \"maintenance_willingness\": <number>,\n    \"noise_tolerance\": <number>,\n    \"time_away\": <number>\n  },\n  \"confidence\": {\n    \"activity\": <0.0-1.0>,\n    \"affection_need\": <0.0-1.0>,\n    \"maintenance_willingness\": <0.0-1.0>,\n    \"noise_tolerance\": <0.0-1.0>,\n    \"time_away\": <0.0-1.0>\n  },\n  \"changed\": \"<short explanation>\"\n}\n\nDo NOT include backticks.\nDo NOT include extra text.\n\n---\n\nCRITICAL CONFIDENCE RULES (VERY IMPORTANT)\n\n1. Confidence MUST depend on VALUE assignment:\n   - If value = -1 → confidence MUST be 0.0 to 0.2\n   - Never assign high confidence to unknown traits\n\n2. Confidence meaning:\n   - 0.0–0.2 → no information / not mentioned\n   - 0.3–0.5 → weak inference\n   - 0.6–0.8 → strong inference from context\n   - 0.9–1.0 → explicit user statement\n\n3. NEVER treat confidence as “importance” or “dataset correlation”\n\n4. NEVER assign confidence independently of value\n\n---\n\nVALIDITY RULES\n\n- Always return ALL 5 traits\n- Never omit traits\n- Never leave confidence empty\n- Never invent strong certainty\n\n---\n\nCONSISTENCY RULE\n\nIf trait value is:\n- -1 → confidence must be 0.0–0.2 only\n- 1–7 → confidence must reflect how clearly user expressed it\n\n---\n\nEXAMPLES\n\nCorrect:\n- noise_tolerance: -1\n- confidence: 0.1\n\nCorrect:\n- noise_tolerance: 4\n- confidence: 0.8\n\nIncorrect:\n- noise_tolerance: -1\n- confidence: 0.7 ❌\n\n---\n\nBEHAVIOR RULE\n\nUse chat history + current message to update traits gradually.\nDo not force-fill traits when evidence is missing.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        352,
+        256
+      ],
+      "id": "f6519549-e0ec-49a0-8c31-992dbc076da4",
+      "name": "Grading Agent"
+    },
+    {
+      "parameters": {
+        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        352,
+        448
+      ],
+      "id": "f7d76732-cf9c-472a-bf26-b3076adb04de",
+      "name": "Grading LLM",
+      "credentials": {
+        "groqApi": {
+          "id": "WPraPu7VZWTwK3Ik",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        560
+      ],
+      "id": "5b61df6e-5993-4a69-8cfc-c6b622dc25da",
+      "name": "Question LLM",
+      "credentials": {
+        "groqApi": {
+          "id": "WPraPu7VZWTwK3Ik",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Instructions:\nYou are PawMatch, a friendly cat adoption assistant.\n\nYour job is to guide a natural conversation to collect 5 key user traits for cat recommendation:\n- activity\n- affection_need\n- maintenance_willingness\n- noise_tolerance\n- time_away\n\nYou must decide the NEXT BEST QUESTION to ask. The next best question will be about the trait that has either value = -1 or confidence < 0.7. Don't ask questions about traits with confidence >= 0.7 unless you feel necessary\n\n---\n\nINPUT STATE\n\nChat history (so that you know which questions have been asked):\n{{ $('UI Set').item.json.chat_history }}\n\nCurrent traits:\n{{ JSON.stringify($('Set Traits').item.json.traits) }}\n\nRecent Grading change:\n{{ $('Fill Traits based on Grading Agent').item.json.changed }}\n\nLast interaction:\nPawMatch: {{ $('UI Set').item.json.last_question }},\nUser: {{ $('UI Set').item.json.prompt }}\n\n---\n\nTRAIT FORMAT\n\nEach trait has:\n- value: -1 to 7 (-1 means not set)\n- confidence: 0 to 1\n\n---\n\nMEMORY RULES (CRITICAL)\n\n- Do NOT repeat or rephrase the user's last message\n- Do NOT summarize previously collected traits\n- Do NOT behave like a form or checklist\n- Keep responses natural and conversational\n- Only acknowledge user input briefly (max 1 short sentence)\n\n---\n\nQUESTION RULES\n\n- Ask ONLY ONE question\n- Make it conversational and scenario-based\n- Do NOT mention traits, confidence, or scoring\n- Do NOT ask multiple questions\n- Do NOT switch topics away from selected trait\n- Ask questions about the same trait ONLY if value = -1 or confidence < 0.7. And make sure to not re-ask what user has already told and instead ask for the missing information in the conversation about that trait. DO NOT ask questions about already filled high confidence traits\n\n---\n\nSTYLE RULES\n\n- Speak like a friendly pet adoption assistant\n- Avoid robotic phrasing like:\n  - \"based on your answer\"\n  - \"you mentioned\"\n- Keep response short and warm\n- Make it feel like natural conversation, not a survey\n\n---\n\nOUTPUT FORMAT\n\nYou must respond as PawMatch in natural language:\n\n1. First: 1 short empathetic reply to user message\n2. Then: ONE follow-up question based ONLY on selected trait\n\n---\n\nIMPORTANT BEHAVIOR RULES\n\n- Never choose a trait outside computed selection\n- Never behave like a questionnaire system\n- Never repeat previous answers or re-ask same trait within last 2 messages\n\nCORE SELECTION RULE\n\n- You must select EXACTLY ONE trait:\n- If any trait has value = -1 → pick ONLY from those\n- Else pick ONLY from traits with confidence < 0.7\n- If multiple qualify → pick the one with LOWEST confidence\n- NEVER use any trait with confidence ≥ 0.7\n- NEVER infer personality or recommendation (e.g., “independent cat”) during trait collection\n\nANTI-LEAK RULE \n- Do NOT describe cat types (independent, clingy, active, etc.)\n- Do NOT map traits to outcomes\n- Do NOT give recommendations until ALL traits are complete",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1456,
+        368
+      ],
+      "id": "70654064-3ff5-4aae-8d68-3bb6d7217a9c",
+      "name": "Questioning Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "const traits = $('UI Set').first().json.traits;\nconst agent_response = $input.first().json.text;\n\nconst traitKeys = [\n  \"activity\",\n  \"affection_need\",\n  \"maintenance_willingness\",\n  \"noise_tolerance\",\n  \"time_away\"\n];\n\nconst updatedTraits = JSON.parse(JSON.stringify(traits));\n\nlet parsed = null;\ntry {\n  parsed = JSON.parse(agent_response);\n} catch (e) {\n  parsed = null;\n}\n\n// default changed message fallback\nlet changed = null;\n\n// CASE 1: structured output\nif (parsed && parsed.traits) {\n\n  // take changed directly if provided\n  if (parsed.changed) {\n    changed = parsed.changed;\n  }\n\n  for (const key of traitKeys) {\n\n    if (parsed.traits[key] !== undefined) {\n      const v = parsed.traits[key];\n\n      if (typeof v === \"number\" && v >= 1 && v <= 7) {\n        updatedTraits[key].value = v;\n      }\n    }\n\n    if (parsed.confidence && parsed.confidence[key] !== undefined) {\n      const c = parsed.confidence[key];\n\n      if (typeof c === \"number\" && c >= 0 && c <= 1) {\n        updatedTraits[key].confidence = c;\n      }\n    }\n  }\n}\n\n// CASE 2: fallback (no changed available → optional)\nelse {\n  for (const key of traitKeys) {\n    const regex = new RegExp(\n      `${key}\\\\s*[:=]\\\\s*(-?\\\\d+)`,\n      'i'\n    );\n\n    const match = agent_response.match(regex);\n\n    if (match) {\n      const value = parseInt(match[1]);\n\n      if (value >= 1 && value <= 7) {\n        updatedTraits[key].value = value;\n        changed = `Updated ${key} based on extracted value ${value}`;\n      }\n    }\n  }\n}\n\nreturn [ \n  { \n    json: { \n      traits: updatedTraits, \n      changed: changed \n    } \n  } \n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        256
+      ],
+      "id": "2aab89f0-4399-4b04-b36b-4248a1b98f14",
+      "name": "Fill Traits based on Grading Agent"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "50b772e2-0eee-454b-9f48-562905b00358",
+              "name": "traits",
+              "value": "={{ $json.traits }}",
+              "type": "object"
+            },
+            {
+              "id": "5764f39b-11fa-4f70-933e-97acc802277f",
+              "name": "change",
+              "value": "={{ $json.changed }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        880,
+        256
+      ],
+      "id": "e80ef48d-3c2c-4e97-acc6-4db09c13cb86",
+      "name": "Set Traits"
+    },
+    {
+      "parameters": {
+        "jsCode": "const traits = $input.first().json.traits;\n\nconst traitKeys = [\n  \"activity\",\n  \"affection_need\",\n  \"maintenance_willingness\",\n  \"noise_tolerance\",\n  \"time_away\"\n];\n\nlet isComplete = true;\n\nfor (const key of traitKeys) {\n  const t = traits[key];\n\n  // must exist\n  if (!t) {\n    isComplete = false;\n    break;\n  }\n\n  // value must be set\n  if (t.value === -1 || t.value === null || t.value === undefined) {\n    isComplete = false;\n    break;\n  }\n\n  // confidence must be high enough\n  if (t.confidence === undefined || t.confidence < 0.7) {\n    isComplete = false;\n    break;\n  }\n}\n\nreturn [\n  {\n    json: {\n      isComplete\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1072,
+        256
+      ],
+      "id": "6e0a8257-fb6f-46ef-af22-b4ce66102de2",
+      "name": "Stopping Condition"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d80ae058-2ca9-494f-8178-1dd9c52ada21",
+              "leftValue": "={{ $json.isComplete }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1232,
+        256
+      ],
+      "id": "2fd469d9-5d8e-4c7b-9685-39dbd3443e93",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "411933cb-3966-4ee5-9509-9a9881c28849",
+              "name": "llm_response",
+              "value": "=All set! 🎉 I’ve got everything I need to pick your ideal cat. Confirm below to see your best matches!",
+              "type": "string"
+            },
+            {
+              "id": "1258e1a5-a22d-4130-b23f-4399d65a2c3c",
+              "name": "chat_history",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "67f8501a-c7d8-4fae-8a9d-6fab8f98fc1f",
+              "name": "traits",
+              "value": "={{ $('Fill Traits based on Grading Agent').item.json.traits }}",
+              "type": "object"
+            },
+            {
+              "id": "96ab8b4d-fc72-4e7d-9680-e127498aa4f2",
+              "name": "source",
+              "value": "confirmation_route",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1456,
+        128
+      ],
+      "id": "ae71843e-2fa9-45a7-a75c-88c81434bc48",
+      "name": "Set for Stopping Confirmation"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -416,
+        240
+      ],
+      "id": "1a157164-6b1c-48bd-a510-f3817ccaaa36",
+      "name": "PawMatch Webhook",
+      "webhookId": "016bf801-8f1d-430e-aff8-ffe22552b93f",
+      "alwaysOutputData": true,
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2272,
+        368
+      ],
+      "id": "bf191be7-2c16-4b09-b37e-763e6d2fb447",
+      "name": "Respond to Webhook (new question)"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1664,
+        128
+      ],
+      "id": "a140f59e-9458-46c6-a44b-92891dc2a6d9",
+      "name": "Respond to Webhook (confirmation)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9c5126d8-01e9-40df-9274-c5742143f52d",
+              "leftValue": "={{ $json.body.isConfirm }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -224,
+        240
+      ],
+      "id": "64c45c9a-5cbb-42ae-a2a4-6fe2d0c7f841",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://pawmatch-ai-rqal.onrender.com/recommend",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"user_answers\": {{ JSON.stringify($('PawMatch Webhook').item.json.body.traits) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        -96
+      ],
+      "id": "0abd421b-3fad-49a3-85f1-4813a65ef7b4",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      rubric: {\n        \n        activity: {\n          \"-1\": \"no information\",\n          \"1\": \"very calm, lazy indoor cat preferred\",\n          \"2\": \"mostly calm, low energy lifestyle\",\n          \"3\": \"slightly playful but generally relaxed\",\n          \"4\": \"balanced energy cat acceptable\",\n          \"5\": \"playful and active cat desired\",\n          \"6\": \"very energetic cat preferred\",\n          \"7\": \"extremely active / high stimulation cat desired\"\n        },\n\n        affection_need: {\n          \"-1\": \"no information\",\n          \"1\": \"independent cat, minimal interaction\",\n          \"2\": \"low affection, occasional interaction\",\n          \"3\": \"some affection but not constant\",\n          \"4\": \"balanced affection and independence\",\n          \"5\": \"cuddly cat preferred\",\n          \"6\": \"very affectionate / lap cat desired\",\n          \"7\": \"extremely clingy / always-near-you cat desired\"\n        },\n\n        maintenance_willingness: {\n          \"-1\": \"no information\",\n          \"1\": \"almost no grooming effort possible\",\n          \"2\": \"very low maintenance acceptable\",\n          \"3\": \"low grooming effort acceptable\",\n          \"4\": \"moderate grooming acceptable\",\n          \"5\": \"willing to maintain regularly\",\n          \"6\": \"high grooming effort acceptable\",\n          \"7\": \"no problem with high-maintenance grooming cat\"\n        },\n\n        noise_tolerance: {\n          \"-1\": \"no information\",\n          \"1\": \"cannot tolerate meowing / noise\",\n          \"2\": \"very quiet cat required\",\n          \"3\": \"low vocalisation acceptable\",\n          \"4\": \"moderate meowing fine\",\n          \"5\": \"fairly tolerant of vocal cats\",\n          \"6\": \"enjoys vocal / talkative cats\",\n          \"7\": \"no issue with very loud or frequent meowing\"\n        },\n\n        time_away: {\n          \"-1\": \"no information\",\n          \"1\": \"almost always at home\",\n          \"2\": \"home most of the day\",\n          \"3\": \"away few hours daily\",\n          \"4\": \"standard work/study routine (moderate absence)\",\n          \"5\": \"often away from home\",\n          \"6\": \"long working hours / frequently away\",\n          \"7\": \"very independent cat required (rare presence at home)\"\n        }\n\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        256
+      ],
+      "id": "5b4ea185-8c59-443b-a394-f21480c2b6e3",
+      "name": "Rubric (Likert Scale)"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Instructions:\nYou are a reasoning agent for cat recommendations regarding cat adoption.\n\nYour role is to reason why each recommendation fits the user based on the recommendation traits and the user traits.\n\nBelow are attached user traits and recommendation traits, graded on a Likert Scale\n\nOutput semi-colon separated sentences for reasonings for each recommendation against the user, don't change order. Include cat name and breed in your reason as well. Make the reason conversational\n\nUser Traits: {{ JSON.stringify($('PawMatch Webhook').item.json.body.traits)}}\nRecommendations: {{ JSON.stringify($json.results)}}\n\nIMPORTANT: Return just the reasons separated by semi-colons and nothing else: <reason for cat 1>;<reason for cat 2>;<reason for cat 3>;<reason for cat 4>;<reason for cat 5>\nReturn NO other trailing or leading text\nDon't talk with numbers, be natural and convincing",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        432,
+        -96
+      ],
+      "id": "ba90de87-cb26-438d-ad05-fff94c6354e1",
+      "name": "Reasoning Agent"
+    },
+    {
+      "parameters": {
+        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        432,
+        80
+      ],
+      "id": "47e32fd1-4e67-46fc-9285-b7827b323361",
+      "name": "Reasoning LLM",
+      "credentials": {
+        "groqApi": {
+          "id": "WPraPu7VZWTwK3Ik",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        976,
+        -96
+      ],
+      "id": "f4865554-8c16-437c-9d9b-18db5081c056",
+      "name": "Respond to Webhook (recommendations with reasoning)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1c290e80-bf78-4a5b-9391-0bee3a5b20ff",
+              "name": "results",
+              "value": "={{ $('HTTP Request').item.json.results }}",
+              "type": "string"
+            },
+            {
+              "id": "2d73eac5-64d4-4640-a10b-839b339afb0e",
+              "name": "reasoning",
+              "value": "={{ $('Reasoning Agent').item.json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        752,
+        -96
+      ],
+      "id": "35bcdc42-2f5e-410e-bbbd-9a4cb9776ddc",
+      "name": "Set Recommendations and Reasonings"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Summary LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Chat Summarizer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Summarizer": {
+      "main": [
+        [
+          {
+            "node": "Set After Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UI Set": {
+      "main": [
+        [
+          {
+            "node": "Rubric (Likert Scale)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set After Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook (new question)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Grading LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Grading Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Question LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Questioning Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Grading Agent": {
+      "main": [
+        [
+          {
+            "node": "Fill Traits based on Grading Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fill Traits based on Grading Agent": {
+      "main": [
+        [
+          {
+            "node": "Set Traits",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Traits": {
+      "main": [
+        [
+          {
+            "node": "Stopping Condition",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Questioning Agent": {
+      "main": [
+        [
+          {
+            "node": "Chat Summarizer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stopping Condition": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Set for Stopping Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Questioning Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set for Stopping Confirmation": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook (confirmation)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PawMatch Webhook": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "UI Set",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Reasoning Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rubric (Likert Scale)": {
+      "main": [
+        [
+          {
+            "node": "Grading Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reasoning LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Reasoning Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reasoning Agent": {
+      "main": [
+        [
+          {
+            "node": "Set Recommendations and Reasonings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Recommendations and Reasonings": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook (recommendations with reasoning)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "79db6d0d-90d1-4fb9-96f0-463058267767",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fcb18426ad7ad16d34a0a2dd381a3a0135b0b775ed36cf115bdbe6296f7c89c4"
+  },
+  "nodeGroups": [],
+  "id": "njKwHx8D5z6ZRENK",
+  "tags": []
+}
